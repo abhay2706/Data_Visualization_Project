@@ -1,0 +1,60 @@
+---
+title: "Interactive Flight Routes in United States"
+author: "Aquib Shaikh,Atharav Pathak,Abhay Kapoor"
+date: "May 1, 2019"
+output: 
+  html_document: 
+  toc_depth: 2
+---
+  
+  ```{r global_options, include=FALSE, cache=FALSE}
+library(knitr)
+opts_chunk$set(echo=TRUE, 
+               warning=FALSE, 
+               message=FALSE,
+               cache = TRUE,
+               include = TRUE,
+               results = 'show',
+               error = TRUE)
+```
+
+
+
+### 1.1
+
+
+```{r 1.1}
+#install.packages('googleway') #We have used package which need "googleway" which needs Google Maps java script API key. With googleway we can also control the style of the map
+
+library(googleway)
+map_key <- "AIzaSyDSwJGtjRqeXn99YTPMIoHAxlg9c3cc4q0"
+
+
+# get the data 
+url <- 'https://raw.githubusercontent.com/plotly/datasets/master/2011_february_aa_flight_paths.csv'
+flights <- read.csv(url)
+
+# add a unique id
+flights$id <- seq_len(nrow(flights))
+
+
+## encode the routes as polylines
+lst <- lapply(unique(flights$id), function(x){
+  lat = c(flights[flights["id"] == x, c("start_lat")], flights[flights["id"] == x, c("end_lat")])
+  lon = c(flights[flights["id"] == x, c("start_lon")], flights[flights["id"] == x, c("end_lon")])
+  data.frame(id = x, polyline = encode_pl(lat = lat, lon = lon))
+})
+
+flights <- merge(flights, do.call(rbind, lst), by = "id")
+
+
+style <- map_styles()$night
+
+
+
+google_map(key = map_key, style = style) %>%
+  add_polylines(data = flights, polyline = "polyline", mouse_over_group = "airport1",
+                stroke_weight = 1, stroke_opacity = 0.3, stroke_colour = "#ccffff")
+
+```
+
